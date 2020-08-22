@@ -51,6 +51,3 @@ x = [3,1,5,8]
 ans = sol.maxCoins(x)
 print(ans)
 
-
-
-        
