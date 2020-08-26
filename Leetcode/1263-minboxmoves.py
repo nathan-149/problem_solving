@@ -3,63 +3,23 @@ class Solution:
     def packString(self, box_row, box_col, player_row, player_col):
         return str(box_row) + "," + str(box_col) + "," + str(player_row) + "," + str(player_col)
 
-    def unpackString(self, word):
-        return list(map(int, word.split(",")))
+    def unpackString(self, state):
+        return list(map(int, state.split(",")))
 
-    def helper(self, grid, box_row, box_col, player_row, player_col, memory, curr_steps):
+    def posAvailable(self, grid, row, col):
+        if(row < 0 or row >= len(grid)):
+            return False
         
-        if(box_row < 0 or box_row >= len(grid) or box_col < 0 or box_col >= len(grid[0])):
-            return 10000
+        if(col < 0 or col >= len(grid[0])):
+            return False
         
-        if(player_row < 0 or player_row >= len(grid) or player_col < 0 or player_col >= len(grid[0])):
-            return 10000
+        if(grid[row][col] == "#"):
+            return False
         
-        if(grid[box_row][box_col] == "#" or grid[player_row][player_col] == "#"):
-            return 10000
-        
-        word = self.packString(box_row, box_col, player_row, player_col)
-
-        if(word in memory):
-            if(curr_steps < memory[word]):
-                memory[word] = curr_steps
-            else:
-                return 10000
-            
-        memory[word] = curr_steps
-        
-        if(grid[box_row][box_col] == "T"):
-            print("Hit target at: " + str(curr_steps) + " steps")
-            return curr_steps
-        
-        val = 10000
-
-        #Move player up
-        if(player_row - 1 == box_row and player_col == box_col):
-            val = min(val, self.helper(grid, box_row - 1, box_col, player_row - 1, player_col, memory, curr_steps + 1))
-        else:
-            val = min(val, self.helper(grid, box_row, box_col, player_row - 1, player_col, memory, curr_steps))
-        
-        #Move player down
-        if(player_row + 1 == box_row and player_col == box_col):
-            val = min(val, self.helper(grid, box_row + 1, box_col, player_row + 1, player_col, memory, curr_steps + 1))
-        else:
-            val = min(val, self.helper(grid, box_row, box_col, player_row + 1, player_col, memory, curr_steps))
-
-        #Move player right
-        if(player_row == box_row and player_col + 1 == box_col):
-            val = min(val, self.helper(grid, box_row, box_col + 1, player_row, player_col + 1, memory, curr_steps + 1))
-        else:
-            val = min(val, self.helper(grid, box_row, box_col, player_row, player_col + 1, memory, curr_steps))
-        
-        #Move player left
-        if(player_row == box_row and player_col - 1 == box_col):
-            val = min(val, self.helper(grid, box_row, box_col - 1, player_row, player_col - 1, memory, curr_steps + 1))
-        else:
-            val = min(val, self.helper(grid, box_row, box_col, player_row, player_col - 1, memory, curr_steps))
-
-        return val
+        return True
 
     def minPushBox(self, grid):
+        #Setup
         box_row = -1
         box_col = -1
         player_row = -1
@@ -78,75 +38,57 @@ class Solution:
                     target_row = i
                     target_col = j
         memory = {}
-        word = self.packString(box_row, box_col, player_row, player_col)
-        queue = [ [word, 0] ]
-        ans = 10000
+        distances = {}
 
-        while queue:
-            [word, curr_steps] = queue.pop(0)
-            
-            if(word in memory and memory[word] <= curr_steps):
-                print("Skip memory: " + word)
-                continue
-            
-            memory[word] = curr_steps
-            print(queue)
-            print(word)
+        moves = [ (0,1), (0, -1), (1, 0), (-1,0) ]
+        state = self.packString(box_row, box_col, player_row, player_col)
+        queue = [ [state] ]
 
-            [box_row, box_col, player_row, player_row] = self.unpackString(word)
-
-            if(box_row < 0 or box_row >= len(grid) or box_col < 0 or box_col >= len(grid[0])):
-                continue
+        distances[state] = 0
         
-            if(player_row < 0 or player_row >= len(grid) or player_col < 0 or player_col >= len(grid[0])):
-                continue
-            
-            if(grid[box_row][box_col] == "#" or grid[player_row][player_col] == "#"):
-                continue
-            
-            if(grid[box_row][box_col] == "T"):
-                print("Hit target at: " + str(curr_steps) + " steps")
-                ans = min(ans, curr_steps)
-                continue
-            
-            
+        dist = 0
+        while(dist < len(queue)):
+            while(queue[dist]):
+                state = queue[dist].pop(0)
 
-            #Move player up
-            if(player_row - 1 == box_row and player_col == box_col):
-                new_word = self.packString(box_row - 1, box_col, player_row - 1, player_col)
-                queue.append([new_word, curr_steps + 1])
-            else:
-                new_word = self.packString(box_row, box_col, player_row - 1, player_col)
-                queue.append([new_word, curr_steps])        
-            #Move player down
-            if(player_row + 1 == box_row and player_col == box_col):
-                new_word = self.packString(box_row + 1, box_col, player_row + 1, player_col)
-                queue.append([new_word, curr_steps + 1])  
-            else:
-                new_word = self.packString(box_row, box_col, player_row + 1, player_col)
-                queue.append([new_word, curr_steps]) 
+                if(state in memory):
+                    continue
+                memory[state] = 1
 
-            #Move player right
-            if(player_row == box_row and player_col + 1 == box_col):
-                new_word = self.packString(box_row, box_col + 1, player_row, player_col + 1)
-                queue.append([new_word, curr_steps + 1]) 
-            else:
-                new_word = self.packString(box_row, box_col, player_row, player_col + 1)
-                queue.append([new_word, curr_steps]) 
-            
-            #Move player left
-            if(player_row == box_row and player_col - 1 == box_col):
-                new_word = self.packString(box_row, box_col - 1, player_row, player_col - 1)
-                queue.append([new_word, curr_steps + 1]) 
-            else:
-                new_word = self.packString(box_row, box_col, player_row, player_col - 1)
-                queue.append([new_word, curr_steps + 1]) 
+                [box_row, box_col, player_row, player_col] = self.unpackString(state)
 
-        #print(memory)
-        if(ans >= 10000):
-            ans = -1
-        print(ans)
-        return ans
+                if(box_row == target_row and box_col == target_col):
+                    return dist
+
+                for move in moves:
+                    new_player_row = player_row + move[0]
+                    new_player_col = player_col + move[1]
+
+                    if not self.posAvailable(grid, new_player_row, new_player_col):
+                        continue
+
+                    if(new_player_row == box_row and new_player_col == box_col):
+                        L = 1
+                        new_box_row = box_row + move[0]
+                        new_box_col = box_col + move[1]
+                    else:
+                        L = 0
+                        new_box_row = box_row
+                        new_box_col = box_col
+                    
+                    if(not self.posAvailable(grid, new_box_row, new_box_col)):
+                        continue
+
+                    new_state = self.packString(new_box_row, new_box_col, new_player_row, new_player_col)
+
+                    curr_distance = distances[state] + L
+                    if(new_state not in distances or curr_distance < distances[new_state]):
+                        distances[new_state] = curr_distance
+                        while(len(queue) <= curr_distance):
+                            queue.append([])
+                        queue[curr_distance].append(new_state)
+            dist += 1
+        return -1
         
         
 sol = Solution()
@@ -156,5 +98,6 @@ grid = [["#","#","#","#","#","#"],
                ["#",".","#","#",".","#"],
                ["#",".",".",".","S","#"],
                ["#","#","#","#","#","#"]]
-sol.minPushBox(grid)
+
+print(sol.minPushBox(grid))
 
