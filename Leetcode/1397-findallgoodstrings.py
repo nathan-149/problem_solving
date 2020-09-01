@@ -1,23 +1,9 @@
-class Solution:
-    def KMPsearch(self, string, pattern):
-        lps = self.createLPS(pattern)
-        i = 0 # index in string
-        j = 0 # index in pattern
+from functools import lru_cache 
 
-        while(i < len(string)):
-            if(string[i] == pattern[j]):
-                i += 1
-                j += 1
-            else:
-                if(j == 0):
-                    i += 1
-                else:
-                    j = lps[j-1]
-            
-            if(j == len(pattern)):
-                return True
-        return False
-        
+class Solution:
+    # LPS (longest prefix-suffix) creates and array
+    # that keeps track of the longest proper prefix which is also suffix
+    # in the string
     def createLPS(self, pattern):
         m = len(pattern)
         lps = [ 0 for _ in range(m)]
@@ -36,34 +22,55 @@ class Solution:
                     i = lps[i - 1]
         return lps
 
-    def changeChar(self, i, string, new_char):
-        string = list(string)
-        string[i] = new_char
-        return "".join(string)
-
-    def traverseAllPossibleStrings(self, i, s1, s2, evil):
-        if(i >= n):
-            return 0
-        if(self.KMPsearch(s1, evil)):
-            return 0
+    # def kmp(l, c):
+    #        while l and evil[l] != c: l = f[l-1]
+    #        if evil[l] == c : l += 1
+    #        return l
+    #    
+    #    f = [0] * len(evil) 
+    #    for i in range(1, len(evil)):
+    #        f[i] = kmp(f[i-1], evil[i])
         
-        s = s1
-        int1 = ord(s1[i])
-        int2 = ord(s2[i])
-
-        for char_int in range(int1, int2 + 1):
-            s = self.changeChar(i, s, chr(char_int))
-            self.traverseAllPossibleStrings(i+1, s, s2, evil)
-            print(s)
-        print("done")
-            
     def findGoodStrings(self, n, s1, s2, evil):
-        self.traverseAllPossibleStrings(0, s1, s2, evil)
+        lps = self.createLPS(evil)
+        print("done")
+
+        # DP using Digit DP
+        # i is the current index of the string we're building
+        # evilLen is the current length of matched with evil in a substring
+        # f1 = the word we are building has already become bigger than s1? [0 = no, 1 = yes]
+        # f2 = the word we are building has already become smaller than s2? [0 = no, 1 = yes]
+        @lru_cache(None)
+        def dp(i, evilLen, f1, f2):
+            if(evilLen == len(evil)):
+                return 0
+            if(i == n):
+                return 1
+            start = 'a' if f1 else s1[i]
+            finish = 'z' if f2 else s2[i]
+            ans = 0
+            for c_int in range(ord(start), ord(finish)+1):
+                c = chr(c_int)
+                new_f1 = f1 or c_int > ord(s1[i])
+                new_f2 = f2 or c_int < ord(s2[i])
+
+                # KMP Substring Search
+                j = evilLen
+                while(j != 0 and evil[j] != c):
+                    j = lps[j-1]
+                if(evil[j] == c):
+                    j += 1
+                
+                ans += dp(i+1, j, new_f1, new_f2)
+                ans %= (10**9 + 7)
+            return ans
+
+        return dp(0, 0, False, False) 
 
 sol = Solution()
 
-s1 = "helloa"
-s2 = "helloz"
+s1 = "pzdanyao"
+s2 = "wgpmtywi"
 n = len(s1)
-evil = "hello"
-sol.findGoodStrings(n, s1, s2, evil)
+evil = "sdka"
+
